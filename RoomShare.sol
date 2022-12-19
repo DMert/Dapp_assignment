@@ -84,12 +84,9 @@ contract RoomShare is IRoomShare {
      */
   }
 
-
   function _sendFunds (address owner, uint256 value) external override {
       payable(owner).transfer(value);
   }
-  
-  
 
   function recommendDate(uint _roomId, uint checkInDate, uint checkOutDate) external override view returns(uint[2] memory) {
     bool[] storage roomAvailability = roomId2room[_roomId].isRented;
@@ -97,10 +94,10 @@ contract RoomShare is IRoomShare {
     bool foundDates = false;
     uint PossibleStaycheckOutDate = 0;
     uint PossibleStaycheckInDate = 0;
-    for(uint i = checkInDate; i < checkOutDate; i++){
+    for(uint i = checkInDate+1; i < checkOutDate; i++){
         if(!roomAvailability[i]){
           if(!foundDates){
-            PossibleStaycheckInDate = i;
+            PossibleStaycheckInDate = i + 1;
           } else {
             PossibleStaycheckOutDate = i + 1;
           }

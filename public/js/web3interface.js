@@ -4,15 +4,15 @@ let user;
 const mEthPrice = 1600;
 const currentYear = 2022;
 
-const contract_address = "0x71C9CA58cf3e0AAB5135AdeAF98624a251F7BA6F"; // 따옴표 안에 주소값 복사 붙여넣기
+const contract_address = "0xE7728DcDF2949F6a2330B578C5751a3AF4283b74"; // 따옴표 안에 주소값 복사 붙여넣기
 const logIn = async () => {
   const ID = prompt("choose your ID");
   // 개발 시 (ganache)
   //web3 = new Web3(new Web3.providers.HttpProvider('http://localhost:8545'));
+  //web3.eth.handleRevert = true
 
   // 과제 제출 시 (metamask)
   web3 = await metamaskRequest();
-  web3.eth.handleRevert = true
 
   user = await getAccountInfos(Number(ID));
 
@@ -33,7 +33,6 @@ const metamaskRequest = async () => {
   // metamask request 
   if (window.ethereum != null) {
     web3 = new Web3(window.ethereum)
-    web3.eth.handleRevert = true
     try {
       // Request account access if needed
       await web3.eth.requestAccounts()
@@ -158,7 +157,7 @@ const _shareRoom = async (name, location, price) => {
     await contract.methods.shareRoom(name, location, price).send({from:document.getElementById("address").text, gasLimit: 1500000});
     alert('Added');
   } catch(error){
-    alert(error.reason);
+    alert(error);
   }
 
   // RoomShareContract의 shareRoom 함수를 호출한다.
@@ -272,14 +271,9 @@ const _rentRoom = async (roomId, currentYear, checkInDate, checkOutDate, price) 
   const priceInWei = web3.utils.toWei(""+price, 'finney');
   const contract = await getRoomShareContract();
   try{
-    await contract.methods.rentRoom(roomId, checkInDate, checkOutDate).send({from:document.getElementById("address").text, gasLimit: 1500000, value:priceInWei})
+    await contract.methods.rentRoom(roomId, checkInDate, checkOutDate).send({from:document.getElementById("address").text, gasLimit: 1500000, value:priceInWei});
   } catch(error){
-    console.log(error.reason);
-    if(error.reason == "room is not available on these dates"){
       _recommendDate(roomId, checkInDate, checkOutDate);
-    } else {
-      alert(error.reason)
-    }
   }
   _updateRents();
 
@@ -298,8 +292,13 @@ const _recommendDate = async (roomId, checkInDate, checkOutDate) => {
   // 체크아웃 날짜에는 퇴실하여야하며, 해당일까지 숙박을 이용하려면 체크아웃날짜는 그 다음날로 변경하여야한다.
   // 주어진 헬퍼 함수 dateFromDay 를 이용한다.
   const contract = await getRoomShareContract();
-  const dates = await contract.methods.recommendDate(roomId, checkInDate, checkOutDate).call({gasLimit: 1500000});
-  alert("Dates unavailable, recommended dates are between:" + dateFromDay(currentYear, dates[0]).toDateString() + " and: " + dateFromDay(currentYear, dates[1]).toDateString())
+  try{
+    const dates = await contract.methods.recommendDate(roomId, checkInDate, checkOutDate).call({gasLimit: 1500000});
+    alert("Dates unavailable, recommended dates are between:" + dateFromDay(currentYear, dates[0]).toDateString() + " and: " + dateFromDay(currentYear, dates[1]).toDateString())
+  } catch(error){
+    alert(error.message);
+  }
+  
 }
 
 
@@ -340,7 +339,7 @@ const markRoomAsInactive = async (_roomId) => {
     listAllRooms();
     alert("marked room as inactive")
   } catch(error){
-    alert(error.reason);
+    alert(error);
   }
 }
 
@@ -353,6 +352,6 @@ const intializeRoomShare = async (_roomId) => {
     await contract.methods.initializeRoomShare(idInput, 365).send({from:document.getElementById("address").text, gasLimit: 1500000})
     alert("set all dates to not rented")
    } catch(error){
-    console.log(error.reason);
+    console.log(error);
    }
 }
